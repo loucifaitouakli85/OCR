@@ -1,0 +1,50 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.timemaze.game"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.timemaze.game"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    // One shared key so CI builds, local builds and scripts/build-apk-local.sh
+    // can update each other. It is public: make your own before publishing.
+    signingConfigs {
+        shared {
+            storeFile rootProject.file("keystore/timemaze-debug.jks")
+            storePassword "timemaze"
+            keyAlias "timemaze"
+            keyPassword "timemaze"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.shared
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.shared
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+}
