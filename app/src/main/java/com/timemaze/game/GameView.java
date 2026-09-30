@@ -65,7 +65,10 @@ final class GameView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (bitmap == null) return;
+        if (bitmap == null) {
+            if (running) postInvalidateOnAnimation();
+            return;
+        }
         long now = System.nanoTime();
         long dt = now - last;
         last = now;
