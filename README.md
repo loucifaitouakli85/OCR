@@ -11,7 +11,7 @@ Milo, a boy in blue overalls, is trapped in a maze made of time. Each of the **2
 ## Download
 
 - **APK:** [`dist/TimeMaze.apk`](dist/TimeMaze.apk). Copy it to your phone and open it. Android will ask you to allow installs from this source.
-- Every push also builds the APK on GitHub Actions. Look for the `TimeMaze-apk` artifact on the **Actions** tab. Pushes to `main` also publish it on the **Releases** page.
+- Every push also builds the APK on GitHub Actions. Look for the `TimeMaze-apk` artifact on the **Actions** tab. Pushes to the default branch also publish it on the **Releases** page.
 
 Requires Android 5.0 (API 21) or newer and plays in landscape. The APK is about 90 KB: every sprite, tile, sound and song is generated in code.
 
@@ -100,3 +100,5 @@ app/src/main/java/com/timemaze/game/
 The game draws into a small pixel buffer that the phone scales up with nearest-neighbour filtering, so the pixels stay crisp on any screen. Remnants replay recorded positions frame by frame. A paradox is detected when a replayed remnant overlaps something solid, loses the support it had, or touches a hazard.
 
 The unit tests in `app/src/test` include a scripted bot that plays every chamber with the real physics. It proves each puzzle can be solved, that the par remnant counts are right, that the Shade appears where he should, and that the key puzzles can't be skipped.
+
+Desktop-only helpers (screenshots, icon generation, a solution report) live in `tools/` because they use `java.awt`. Run them with `scripts/dev-tools.sh`, for example `scripts/dev-tools.sh SolveAll`.
