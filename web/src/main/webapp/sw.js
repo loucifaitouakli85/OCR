@@ -1,5 +1,5 @@
 // Offline support: serve the game from the cache, refresh it in the background.
-var CACHE = "timemaze-v1";
+var CACHE = "timemaze-v2";
 var SHELL = [
   "./",
   "index.html",

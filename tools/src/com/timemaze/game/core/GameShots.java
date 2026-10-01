@@ -66,8 +66,8 @@ public final class GameShots {
         for (int i = 0; i < 12; i++) { tapCenter(); frames(5); }
         frames(60);
         shot("10_after_sabotage");
-        // chamber 19 reveal
-        game.startLevel(19);
+        // chamber 29 reveal
+        game.startLevel(29);
         tapCenter();
         frames(80);
         for (int i = 0; i < 9; i++) { tapCenter(); tapCenter(); frames(3); }

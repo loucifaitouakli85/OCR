@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public final class ShadeEvent {
     public static final int ON_START = 0, ON_LOOP = 1, ON_SIGNAL = 2, ON_ENTER = 3;
 
-    public static final int A_BREAK = 0, A_TILE = 1, A_CHASE = 2, A_LIMIT = 3;
+    public static final int A_BREAK = 0, A_TILE = 1, A_CHASE = 2, A_LIMIT = 3, A_REWIRE = 4, A_TIMER = 5, A_DARK = 6;
 
     public static final class Action {
         public int type;
@@ -23,6 +23,7 @@ public final class ShadeEvent {
         public char tile;
         public int n;
         public float speed;
+        public String req;
     }
 
     public int trigger = ON_START;
@@ -113,6 +114,28 @@ public final class ShadeEvent {
     /** Limits the machine to n more trips. */
     public ShadeEvent limit(int n) {
         act(A_LIMIT).n = n;
+        return this;
+    }
+
+    /** Changes what a gate, lift, laser, rift or the exit ('E') listens to. */
+    public ShadeEvent rewire(char key, String req) {
+        Action a = act(A_REWIRE);
+        a.key = key;
+        a.req = req;
+        return this;
+    }
+
+    /** Changes how long the timed button at key stays active. */
+    public ShadeEvent timer(char key, int frames) {
+        Action a = act(A_TIMER);
+        a.key = key;
+        a.n = frames;
+        return this;
+    }
+
+    /** Puts out the lights for the rest of the chamber. */
+    public ShadeEvent darken() {
+        act(A_DARK);
         return this;
     }
 

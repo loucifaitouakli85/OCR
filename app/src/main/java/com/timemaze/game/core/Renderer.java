@@ -133,6 +133,8 @@ public final class Renderer {
                     if (th.lipStyle == 1 && (h & 3) == 0) g.rect(x + i, y + 3, 1, 1 + ((h >>> 3) & 3), th.lip);
                     else if (th.lipStyle == 2 && (h & 7) == 0) g.rect(x + i, y + 3, 1, 2 + ((h >>> 3) & 3), th.lipD);
                     else if (th.lipStyle == 3 && (i & 3) == 1) g.pset(x + i, y + 2, 0xFFFFF0B0);
+                    else if (th.lipStyle == 4 && (h & 7) == 0) g.rect(x + i, y + 3, 1, 1 + ((h >>> 3) & 3), 0xFFB0602A);
+                    else if (th.lipStyle == 5 && (h & 7) == 0) g.pset(x + i, y + 1, (h & 64) != 0 ? 0xFFFFB060 : 0xFFFF7040);
                     else if (th.lipStyle == 0 && (h & 7) == 0) g.pset(x + i, y + 1, th.wallL);
                 }
                 if (!lf) g.rect(x, y, 1, 4, th.edge);
@@ -201,8 +203,10 @@ public final class Renderer {
                 if (c != 0 && bx + x >= 0 && bx + x < g.w) g.px[dst + x] = c;
             }
         }
+        drawCrumble(g, w, th);
         drawMachine(g, w, th);
         drawExit(g, w, th);
+        for (World.Rift rf : w.rifts) drawRift(g, w, rf);
         for (World.Plate p : w.plates) drawPlate(g, w, p);
         for (World.Lever l : w.levers) drawLever(g, w, l);
         for (World.Door d : w.doors) drawDoor(g, w, d);
@@ -214,6 +218,7 @@ public final class Renderer {
             int a = 255 * p.life / Math.max(1, p.max);
             g.blend((int) p.x, (int) p.y, p.color, a);
         }
+        if (w.dark) drawDarkness(g, w);
         drawStateFx(g, w);
         g.ox = 0;
         g.oy = 0;
@@ -364,9 +369,20 @@ public final class Renderer {
     }
 
     private void drawPlate(Gfx g, World w, World.Plate p) {
+        if (w.plateFallen(p)) return;
         int x = (int) p.x, y = (int) p.y;
         int col = Theme.channel(p.channel);
         g.rect(x - 1, y + 1, 14, 2, 0xFF2E3142);
+        if (p.weight > 1 && !p.broken) {
+            // heavy plate: iron rim and one pip per body it needs
+            g.rect(x - 2, y, 16, 3, 0xFF4A4E62);
+            g.rect(x - 2, y, 16, 1, 0xFF8A8FA8);
+            for (int i = 0; i < p.weight; i++) {
+                int px = x + 6 - p.weight * 2 + i * 4;
+                g.rect(px, y - 5, 3, 3, 0xFF1A1C28);
+                g.rect(px, y - 5, 2, 2, i < p.load ? col : Gfx.darken(col, 150));
+            }
+        }
         if (p.broken) {
             g.rect(x, y + 1, 12, 1, 0xFF5A5A62);
             g.pset(x + 3, y, 0xFF5A5A62);
@@ -391,6 +407,113 @@ public final class Renderer {
             if (p.timer > 0) {
                 int bw = 12 * p.timer / p.timerFrames;
                 g.rect(x, y - 2, bw, 1, Gfx.lighten(col, 80));
+            }
+        }
+    }
+
+    private void drawCrumble(Gfx g, World w, Theme th) {
+        for (int r = 0; r < World.ROWS; r++) {
+            for (int c = 0; c < World.COLS; c++) {
+                if (w.tiles[r][c] != World.T_CRUMBLE) continue;
+                int st = w.crumble[r][c];
+                if (st < 0) continue;
+                int x = c * TILE, y = r * TILE;
+                if (st > 0) {
+                    x += (hash(w.frameCounter / 2, c, r) & 2) - 1;
+                    y += st < 15 ? (w.frameCounter & 1) : 0;
+                }
+                int base = Gfx.mix(th.wall, 0xFF8A7A6A, 70);
+                g.rect(x, y, TILE, TILE, base);
+                g.rect(x, y, TILE, 2, th.lip);
+                g.rect(x, y + TILE - 1, TILE, 1, th.edge);
+                g.rect(x, y, 1, TILE, th.edge);
+                g.rect(x + TILE - 1, y, 1, TILE, th.edge);
+                // cracks widen as it gives way
+                int dk = th.edge;
+                g.line(x + 3, y + 2, x + 6, y + 8, dk);
+                g.line(x + 6, y + 8, x + 4, y + 14, dk);
+                g.line(x + 6, y + 8, x + 12, y + 10, dk);
+                g.line(x + 11, y + 2, x + 9, y + 6, dk);
+                if (st > 0 && st < 30) {
+                    g.line(x + 12, y + 10, x + 14, y + 15, dk);
+                    g.line(x + 2, y + 11, x + 5, y + 9, dk);
+                }
+                for (int i = 0; i < 4; i++) {
+                    int h = hash(c, r, i + 40);
+                    g.pset(x + 1 + (h & 13), y + 3 + ((h >>> 4) & 11), th.wallL);
+                }
+            }
+        }
+    }
+
+    private void drawRift(Gfx g, World w, World.Rift rf) {
+        int col = rf.req.ch.length > 0 ? Theme.channel(rf.req.ch[0]) : 0xFFB98CFF;
+        for (int end = 0; end < 2; end++) {
+            int x = (int) (end == 0 ? rf.ax : rf.bx), y = (int) (end == 0 ? rf.ay : rf.by);
+            int cx = x + 8, cy = y + 8;
+            if (rf.active) {
+                for (int ring = 7; ring >= 1; ring--) {
+                    int band = (ring + w.frameCounter / 4 + end * 2) & 3;
+                    int[] pal = {0xFF2A1048, 0xFF6A3AC8, 0xFFB98CFF, 0xFFE8D8FF};
+                    for (int yy = -ring - 1; yy <= ring + 1; yy++) {
+                        int span = (int) Math.round(Math.sqrt(Math.max(0, (ring + 1) * (ring + 1) - yy * yy)) * 0.6);
+                        g.rect(cx - span, cy + yy, span * 2 + 1, 1, pal[band]);
+                    }
+                }
+                g.blendRect(cx - 1, cy - 7, 2, 14, 0xFFFFFFFF, 120);
+            } else {
+                for (int yy = -8; yy <= 8; yy += 2) {
+                    int span = (int) Math.round(Math.sqrt(64 - yy * yy) * 0.6);
+                    g.pset(cx - span, cy + yy, 0xFF4A3A66);
+                    g.pset(cx + span, cy + yy, 0xFF4A3A66);
+                }
+            }
+            reqLights(g, rf.req, cx, y - 4, w.sig);
+        }
+    }
+
+    private int[] lightBuf = new int[W * H];
+
+    private void light(int cx, int cy, int r, int strength) {
+        int r2 = r * r;
+        for (int y = Math.max(0, cy - r); y < Math.min(H, cy + r); y++) {
+            int dy = y - cy;
+            for (int x = Math.max(0, cx - r); x < Math.min(W, cx + r); x++) {
+                int dx = x - cx;
+                int d2 = dx * dx + dy * dy;
+                if (d2 >= r2) continue;
+                int v = strength * (r2 - d2) / r2;
+                int i = y * W + x;
+                if (v > lightBuf[i]) lightBuf[i] = v;
+            }
+        }
+    }
+
+    /** Lights out: everything fades to black except around the boy, his remnants and the machines. */
+    private void drawDarkness(Gfx g, World w) {
+        java.util.Arrays.fill(lightBuf, 0);
+        if (w.state != World.DEAD) light((int) w.x + 4, (int) w.y + 7, 52, 300);
+        for (World.Remnant r : w.remnants) if (r.active) light((int) r.x + 4, (int) r.y + 7, 34, 260);
+        light((int) w.machineX + 8, (int) w.machineY + 16, 26, 230);
+        if (w.exitOpen > 0) light((int) w.exitX + 8, (int) w.exitY + 18, 24, 220);
+        for (World.Rift rf : w.rifts) {
+            if (!rf.active) continue;
+            light((int) rf.ax + 8, (int) rf.ay + 8, 18, 200);
+            light((int) rf.bx + 8, (int) rf.by + 8, 18, 200);
+        }
+        for (World.Laser z : w.lasers) if (z.on) light(z.col * TILE + 8, z.row * TILE + 8, 14, 200);
+        for (int y = 0; y < H; y++) {
+            int gy = g.oy + y;
+            if (gy < 0 || gy >= g.h) continue;
+            for (int x = 0; x < W; x++) {
+                int gx = g.ox + x;
+                if (gx < 0 || gx >= g.w) continue;
+                int l = Math.min(255, lightBuf[y * W + x]);
+                int a = 236 - l;
+                if (a <= 0) continue;
+                a = Math.min(236, (a + 20) / 40 * 40); // banded, like old lamplight
+                int i = gy * g.w + gx;
+                g.px[i] = Gfx.mix(g.px[i], 0xFF030206, a);
             }
         }
     }

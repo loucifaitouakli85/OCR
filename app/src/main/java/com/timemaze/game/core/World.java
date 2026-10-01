@@ -14,7 +14,9 @@ public final class World {
     public static final int ROOM_W = COLS * TILE, ROOM_H = ROWS * TILE;
 
     // tiles
-    public static final int T_EMPTY = 0, T_WALL = 1, T_ONEWAY = 2, T_SPIKE = 3, T_EMITTER = 4;
+    public static final int T_EMPTY = 0, T_WALL = 1, T_ONEWAY = 2, T_SPIKE = 3, T_EMITTER = 4, T_CRUMBLE = 5;
+    /** Frames a crumbling tile holds after someone first stands on it. */
+    public static final int CRUMBLE_FRAMES = 75;
 
     // body size
     public static final int PW = 8, PH = 15;
@@ -37,6 +39,7 @@ public final class World {
         public int channel;
         public boolean pressed, broken;
         public int timerFrames, timer; // timed plates only
+        public int weight = 1, load;   // heavy plates need weight bodies
     }
 
     public static final class Lever {
@@ -48,6 +51,7 @@ public final class World {
     }
 
     public static final class Door {
+        public char key;
         public int col, rowTop, rowBottom;
         public Req req;
         public float open;
@@ -60,6 +64,7 @@ public final class World {
     }
 
     public static final class Lift {
+        public char key;
         public float x0, y0, x1, y1, x, y, px, py, dx, dy;
         public int width;
         public Req req;
@@ -67,11 +72,20 @@ public final class World {
     }
 
     public static final class Laser {
+        public char key;
         public int col, row, dir;
         public Req req;
         public boolean on;
         /** Beam rectangle, recomputed every tick. */
         public float bx, by, bw, bh;
+    }
+
+    /** Two linked tears in time; stepping into one comes out of the other. */
+    public static final class Rift {
+        public char key;
+        public float ax, ay, bx, by; // top-left of each end's tile
+        public Req req;
+        public boolean active;
     }
 
     public static final class Recording {
@@ -174,8 +188,13 @@ public final class World {
     public final ArrayList<Door> doors = new ArrayList<Door>();
     public final ArrayList<Lift> lifts = new ArrayList<Lift>();
     public final ArrayList<Laser> lasers = new ArrayList<Laser>();
+    public final ArrayList<Rift> rifts = new ArrayList<Rift>();
+    /** Crumbling tiles: 0 intact, > 0 frames left before collapse, -1 collapsed. */
+    public final int[][] crumble = new int[ROWS][COLS];
     public final boolean[] sig = new boolean[26];
-    public final Req exitReq;
+    public Req exitReq;
+    public boolean dark;
+    boolean riftArmed = true;
     public float exitOpen;
     public final float machineX, machineY, exitX, exitY;
 
@@ -236,6 +255,7 @@ public final class World {
                     p.h = 3;
                     p.channel = o.channel - 'a';
                     p.timerFrames = o.type == Level.TIMER ? o.frames : 0;
+                    p.weight = o.weight;
                     plates.add(p);
                     break;
                 }
@@ -253,6 +273,7 @@ public final class World {
                 }
                 case Level.DOOR: {
                     Door d = new Door();
+                    d.key = o.key;
                     d.col = o.col;
                     d.rowTop = o.rowTop;
                     d.rowBottom = o.rowBottom;
@@ -265,6 +286,7 @@ public final class World {
                 }
                 case Level.LIFT: {
                     Lift l = new Lift();
+                    l.key = o.key;
                     l.x0 = o.col * TILE;
                     // the marked tiles are where a rider stands, so the deck is at their bottom edge
                     l.y0 = (o.row + 1) * TILE;
@@ -277,12 +299,24 @@ public final class World {
                 }
                 case Level.LASER: {
                     Laser z = new Laser();
+                    z.key = o.key;
                     z.col = o.col;
                     z.row = o.row;
                     z.dir = o.dir;
                     z.req = new Req(o.req);
                     tiles[o.row][o.col] = T_EMITTER;
                     lasers.add(z);
+                    break;
+                }
+                case Level.RIFT: {
+                    Rift rf = new Rift();
+                    rf.key = o.key;
+                    rf.ax = o.col * TILE;
+                    rf.ay = o.row * TILE;
+                    rf.bx = o.endCol * TILE;
+                    rf.by = o.endRow * TILE;
+                    rf.req = new Req(o.req);
+                    rifts.add(rf);
                     break;
                 }
             }
@@ -293,6 +327,7 @@ public final class World {
         exitX = level.exitCol * TILE;
         exitY = (level.exitRow - 1) * TILE;
         maxRemnants = level.maxRemnants;
+        dark = level.dark;
         eventFired = new boolean[level.events.size()];
         resetLoop();
     }
@@ -302,6 +337,7 @@ public final class World {
             case '#': return T_WALL;
             case '=': return T_ONEWAY;
             case '^': return T_SPIKE;
+            case 'x': return T_CRUMBLE;
             default: return T_EMPTY;
         }
     }
@@ -314,8 +350,12 @@ public final class World {
         for (Plate p : plates) {
             p.pressed = false;
             p.timer = 0;
+            p.load = 0;
         }
         for (Lever l : levers) l.on = l.initial;
+        for (int r = 0; r < ROWS; r++)
+            for (int c = 0; c < COLS; c++) crumble[r][c] = 0;
+        riftArmed = true;
         for (Lift l : lifts) {
             l.x = l.px = l.x0;
             l.y = l.py = l.y0;
@@ -345,6 +385,7 @@ public final class World {
         for (Door d : doors) d.open = d.req.eval(sig) ? 1f : 0f;
         exitOpen = exitReq.eval(sig) ? 1f : 0f;
         updateLasers();
+        updateRifts();
         chaseX = chaseCol * TILE + 1;
         chaseY = (chaseRow - 1) * TILE;
         paradoxRemnant = -1;
@@ -404,10 +445,12 @@ public final class World {
 
         // 1. signals from where everybody stood last frame
         computeSignals();
+        updateCrumble();
         // 2. mechanisms
         updateDoors();
         updateLifts();
         updateLasers();
+        updateRifts();
         updateExit();
         // 3. remnants replay the past
         for (int i = 0; i < remnants.size(); i++) {
@@ -458,11 +501,18 @@ public final class World {
                 continue;
             }
             boolean was = p.pressed;
-            p.pressed = bodyOn(p);
+            if (plateFallen(p)) {
+                p.pressed = false;
+                p.load = 0;
+                continue;
+            }
+            p.load = bodiesOn(p);
+            p.pressed = p.load >= p.weight;
             if (p.pressed && !was) sound(Sfx.PLATE_ON);
             if (!p.pressed && was && p.timerFrames == 0) sound(Sfx.PLATE_OFF);
             if (p.timerFrames > 0) {
-                if (p.pressed) p.timer = p.timerFrames;
+                // a timed button starts its countdown when pressed; standing on it doesn't extend it
+                if (p.pressed && !was) p.timer = p.timerFrames;
                 else if (p.timer > 0) {
                     p.timer--;
                     if (p.timer == 0) sound(Sfx.PLATE_OFF);
@@ -476,13 +526,58 @@ public final class World {
         for (Lever l : levers) if (l.on && !l.broken) s[l.channel] = true;
     }
 
-    boolean bodyOn(Plate p) {
-        float px0 = p.x, px1 = p.x + p.w, py0 = p.y - 1, py1 = p.y + p.h;
-        if (overlap(x, y, PW, PH, px0, py0, px1 - px0, py1 - py0)) return true;
+    /** Number of bodies pressing a plate. Heavy plates also feel a tower standing on it. */
+    int bodiesOn(Plate p) {
+        float px0 = p.x, py0 = p.y - 1, ph = p.h + 1;
+        if (p.weight > 1) {
+            py0 -= 2 * PH + 2;
+            ph += 2 * PH + 2;
+        }
+        int n = 0;
+        if (overlap(x, y, PW, PH, px0, py0, p.w, ph)) n++;
         for (Remnant r : remnants) {
-            if (r.active && overlap(r.x, r.y, PW, PH, px0, py0, px1 - px0, py1 - py0)) return true;
+            if (r.active && overlap(r.x, r.y, PW, PH, px0, py0, p.w, ph)) n++;
+        }
+        return n;
+    }
+
+    /** A plate resting on a collapsed crumbling tile has fallen with it. */
+    boolean plateFallen(Plate p) {
+        int r = p.row + 1;
+        return r < ROWS && tiles[r][p.col] == T_CRUMBLE && crumble[r][p.col] < 0;
+    }
+
+    void updateCrumble() {
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                if (tiles[r][c] != T_CRUMBLE) continue;
+                int st = crumble[r][c];
+                if (st > 0) {
+                    if (--st == 0) {
+                        st = -1;
+                        sound(Sfx.LAND);
+                        burst(c * TILE + 8, r * TILE + 4, 0xFF9A8A7A, 10);
+                    } else if (st % 15 == 0) {
+                        sound(Sfx.TICK);
+                    }
+                    crumble[r][c] = st;
+                } else if (st == 0 && anyBodyStandingOn(c * TILE, r * TILE)) {
+                    crumble[r][c] = CRUMBLE_FRAMES;
+                }
+            }
+        }
+    }
+
+    boolean anyBodyStandingOn(float tx, float top) {
+        if (x + PW > tx && x < tx + TILE && Math.abs(y + PH - top) <= 1.5f) return true;
+        for (Remnant r : remnants) {
+            if (r.active && r.x + PW > tx && r.x < tx + TILE && Math.abs(r.y + PH - top) <= 1.5f) return true;
         }
         return false;
+    }
+
+    void updateRifts() {
+        for (Rift rf : rifts) rf.active = rf.req.eval(sig);
     }
 
     void updateDoors() {
@@ -553,7 +648,7 @@ public final class World {
             int dc = z.dir == Level.DIR_LEFT ? -1 : z.dir == Level.DIR_RIGHT ? 1 : 0;
             int dr = z.dir == Level.DIR_UP ? -1 : z.dir == Level.DIR_DOWN ? 1 : 0;
             int c = z.col + dc, r = z.row + dr;
-            while (c >= 0 && c < COLS && r >= 0 && r < ROWS && (tiles[r][c] == T_EMPTY || tiles[r][c] == T_SPIKE || tiles[r][c] == T_ONEWAY)) {
+            while (c >= 0 && c < COLS && r >= 0 && r < ROWS && !solidTile(c, r)) {
                 c += dc;
                 r += dr;
             }
@@ -647,6 +742,7 @@ public final class World {
             dust(x + PW / 2f, y + PH);
             sound(Sfx.LAND);
         }
+        travelRifts();
 
         // animation
         if (onGround) {
@@ -695,6 +791,46 @@ public final class World {
             }
         }
         return toggled;
+    }
+
+    /** Stepping into an open rift brings the boy out of its twin. */
+    void travelRifts() {
+        float cx = x + PW / 2f, cy = y + PH / 2f;
+        boolean inside = false;
+        for (Rift rf : rifts) {
+            boolean inA = cx >= rf.ax + 2 && cx <= rf.ax + TILE - 2 && cy >= rf.ay && cy <= rf.ay + TILE;
+            boolean inB = cx >= rf.bx + 2 && cx <= rf.bx + TILE - 2 && cy >= rf.by && cy <= rf.by + TILE;
+            if (!inA && !inB) continue;
+            inside = true;
+            if (!riftArmed || !rf.active) continue;
+            float tx = inA ? rf.bx : rf.ax, ty = inA ? rf.by : rf.ay;
+            burst(cx, cy, 0xFFB98CFF, 12);
+            x = tx + (TILE - PW) / 2f;
+            y = ty + TILE - PH;
+            vy = Math.min(vy, 0f);
+            standOn = -1;
+            onGround = false;
+            riftArmed = false;
+            sound(Sfx.VANISH);
+            burst(x + PW / 2f, y + PH / 2f, 0xFFB98CFF, 12);
+            return;
+        }
+        if (!inside) riftArmed = true;
+    }
+
+    /** True when a jump from (fx, fy) to (tx, ty) is a trip through an open rift. */
+    boolean riftTrip(float fx, float fy, float tx, float ty) {
+        for (Rift rf : rifts) {
+            if (!rf.active) continue;
+            if (near(fx, fy, rf.ax, rf.ay) && near(tx, ty, rf.bx, rf.by)) return true;
+            if (near(fx, fy, rf.bx, rf.by) && near(tx, ty, rf.ax, rf.ay)) return true;
+        }
+        return false;
+    }
+
+    static boolean near(float bx, float by, float tileX, float tileY) {
+        float cx = bx + PW / 2f, cy = by + PH / 2f;
+        return cx >= tileX - 6 && cx <= tileX + TILE + 6 && cy >= tileY - 10 && cy <= tileY + TILE + 10;
     }
 
     public boolean inMachine() {
@@ -782,7 +918,7 @@ public final class World {
                 for (int c = c0; c <= c1; c++) {
                     int tt = tileAt(c, r);
                     float top = r * TILE;
-                    if (tt == T_WALL || tt == T_EMITTER) {
+                    if (solidTile(c, r)) {
                         if (newBottom > top && oldBottom <= top + 0.01f) {
                             if (top < best) {
                                 best = top;
@@ -855,7 +991,7 @@ public final class World {
 
     boolean solidTile(int c, int r) {
         int t = tileAt(c, r);
-        return t == T_WALL || t == T_EMITTER;
+        return t == T_WALL || t == T_EMITTER || (t == T_CRUMBLE && crumble[r][c] >= 0);
     }
 
     int tileAt(int c, int r) {
@@ -892,6 +1028,8 @@ public final class World {
                 why = "REMNANT " + (i + 1) + " WAS BLOCKED";
             } else if (r.rec.grounded(t) && !supported(r, i)) {
                 why = "REMNANT " + (i + 1) + " LOST ITS FOOTING";
+            } else if (Math.abs(r.x - r.px) + Math.abs(r.y - r.py) > 24 && t > 1 && !riftTrip(r.px, r.py, r.x, r.y)) {
+                why = "REMNANT " + (i + 1) + " FOUND THE RIFT CLOSED";
             } else if (hazardAt(r.x, r.y)) {
                 why = "REMNANT " + (i + 1) + " WAS HURT";
             }
@@ -913,7 +1051,7 @@ public final class World {
         int r = (int) Math.floor((bottom + 0.5f) / TILE);
         for (int c = c0; c <= c1; c++) {
             int tt = tileAt(c, r);
-            if ((tt == T_WALL || tt == T_EMITTER || tt == T_ONEWAY) && Math.abs(bottom - r * TILE) <= 1.5f) return true;
+            if ((solidTile(c, r) || tt == T_ONEWAY) && Math.abs(bottom - r * TILE) <= 1.5f) return true;
         }
         for (Door d : doors) {
             if (d.solidH() > 0.5f && x1 > d.x && x0 < d.x + Door.W && Math.abs(bottom - d.top) <= 1.5f) return true;
@@ -1048,6 +1186,15 @@ public final class World {
                     chaseX = chaseCol * TILE + 1;
                     chaseY = (chaseRow - 1) * TILE;
                     break;
+                case ShadeEvent.A_REWIRE:
+                    rewire(a.key, a.req);
+                    break;
+                case ShadeEvent.A_TIMER:
+                    for (Plate p : plates) if (p.key == a.key) p.timerFrames = a.n;
+                    break;
+                case ShadeEvent.A_DARK:
+                    dark = true;
+                    break;
                 case ShadeEvent.A_LIMIT:
                     maxRemnants = Math.min(maxRemnants, remnants.size() + a.n);
                     break;
@@ -1057,6 +1204,15 @@ public final class World {
         shake = 16;
         flash = 10;
         sound(Sfx.SABOTAGE);
+    }
+
+    void rewire(char key, String req) {
+        Req r = new Req(req);
+        if (key == 'E') exitReq = r;
+        for (Door d : doors) if (d.key == key) d.req = r;
+        for (Lift l : lifts) if (l.key == key) l.req = r;
+        for (Laser z : lasers) if (z.key == key) z.req = r;
+        for (Rift rf : rifts) if (rf.key == key) rf.req = r;
     }
 
     /** Ends the cutscene and resumes play. */

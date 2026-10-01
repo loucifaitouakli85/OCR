@@ -25,13 +25,16 @@ public class LevelsTest {
         }
     }
 
+    private static final int[] SHADE_CHAMBERS = {5, 8, 10, 12, 15, 18, 20, 23, 26, 29};
+
     @Test
-    public void shadeAppearsInChambers5_10_15_19() {
+    public void shadeAppearsInTenChambers() {
         for (int n = 1; n <= Levels.COUNT; n++) {
-            boolean shade = n == 5 || n == 10 || n == 15 || n == 19;
+            boolean shade = false;
+            for (int k : SHADE_CHAMBERS) shade |= k == n;
             assertEquals("Level " + n, shade, Levels.get(n).isShadeLevel());
         }
-        for (int n : new int[]{5, 10, 15, 19}) {
+        for (int n : SHADE_CHAMBERS) {
             Bot.Result r = Bot.run(Levels.get(n), Solutions.get(n));
             boolean fired = false;
             for (boolean b : r.world.eventFired) fired |= b;
@@ -88,8 +91,64 @@ public class LevelsTest {
 
     @Test
     public void theTruthLimitsTheMachineToTwoTrips() {
-        World w = Bot.run(Levels.get(19), Solutions.get(19)).world;
+        World w = Bot.run(Levels.get(29), Solutions.get(29)).world;
         assertEquals(2, w.maxRemnants);
+    }
+
+    @Test
+    public void oneBodyIsNotEnoughForAHeavyPlate() {
+        Bot.Result r = Bot.run(Levels.get(16), new Cmd[][]{
+            loop(walk(6), idle(900), machine()),
+            loop(walk(7), jumpTo(10), jumpTo(12), jumpTo(14), walk(16), idle(300))});
+        assertFalse(r.won);
+    }
+
+    @Test
+    public void aCrackedBridgeDropsABoyWhoLingers() {
+        Cmd[][] sol = Solutions.get(18);
+        Bot.Result r = Bot.run(Levels.get(18), new Cmd[][]{sol[0], sol[1], loop(walk(9), idle(300))});
+        assertFalse(r.won);
+    }
+
+    @Test
+    public void theShadeRewiresTheExitInChamber20() {
+        World w = Bot.run(Levels.get(20), Solutions.get(20)).world;
+        boolean[] sig = new boolean[26];
+        sig['a' - 'a'] = true;
+        assertFalse("the lever alone opens the exit", w.exitReq.eval(sig));
+        sig['h' - 'a'] = true;
+        assertTrue(w.exitReq.eval(sig));
+    }
+
+    @Test
+    public void theShadePutsOutTheLightsInChamber23() {
+        assertFalse(Levels.get(23).dark);
+        assertTrue(Bot.run(Levels.get(23), Solutions.get(23)).world.dark);
+    }
+
+    @Test
+    public void closingARiftBeforeARemnantUsesItIsAParadox() {
+        Level l = new Level(99, "TEST", 4,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#.T..L....R....r..E#",
+            "####################")
+            .lever('L', 'a', false)
+            .rift('R', 'r', "!a")
+            .exit("")
+            .intro("TEST");
+        Bot.Result r = Bot.run(l, new Cmd[][]{
+            loop(untilTeleport(1), walk(17), untilTeleport(-1), machine()),
+            loop(walk(5), act(), idle(400))});
+        assertFalse(r.won);
+        assertTrue(r.log, r.log.contains("RIFT CLOSED"));
     }
 
     @Test
@@ -97,7 +156,7 @@ public class LevelsTest {
         for (int n = 1; n <= Levels.COUNT; n++) {
             Level l = Levels.get(n);
             assertEquals(n, l.num);
-            assertEquals(n <= 5 ? 0 : n <= 10 ? 1 : n <= 15 ? 2 : 3, l.zone);
+            assertEquals((n - 1) / 5, l.zone);
             // machine and exit need a free tile above and solid ground below
             assertTrue("machine top " + n, l.grid[l.machineRow - 1][l.machineCol] != '#');
             assertTrue("exit top " + n, l.grid[l.exitRow - 1][l.exitCol] != '#');

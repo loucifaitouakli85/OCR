@@ -45,6 +45,23 @@ public final class Bot {
         };
     }
 
+    /** Holds a direction (-1/1) until the boy is carried through a rift. */
+    public static Cmd untilTeleport(final int dir) {
+        return new Cmd() {
+            int n;
+            float lx, ly;
+
+            public boolean step(World w, boolean[] in) {
+                if (n > 0 && Math.abs(w.x - lx) + Math.abs(w.y - ly) > 24) return true;
+                if (++n > 1200) throw new IllegalStateException("never reached a rift");
+                lx = w.x;
+                ly = w.y;
+                in[dir < 0 ? 0 : 1] = true;
+                return false;
+            }
+        };
+    }
+
     /** Idles for the given number of frames. */
     public static Cmd idle(final int frames) {
         return new Cmd() {

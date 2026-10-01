@@ -9,7 +9,14 @@ public final class Audio {
     public static final int RATE = Sfx.RATE;
 
     public static final int SONG_NONE = -1, SONG_TITLE = 0, SONG_ZONE1 = 1, SONG_ZONE2 = 2, SONG_ZONE3 = 3,
-        SONG_ZONE4 = 4, SONG_SHADE = 5, SONG_ENDING = 6;
+        SONG_ZONE4 = 4, SONG_SHADE = 5, SONG_ENDING = 6, SONG_RUST = 7, SONG_ASH = 8;
+
+    private static final int[] ZONE_SONGS = {SONG_ZONE1, SONG_ZONE2, SONG_ZONE3, SONG_RUST, SONG_ASH, SONG_ZONE4};
+
+    /** Music for a zone of the maze (0 = Clockwork Halls ... 5 = Heart of Time). */
+    public static int forZone(int zone) {
+        return ZONE_SONGS[Math.max(0, Math.min(ZONE_SONGS.length - 1, zone))];
+    }
 
     private final float[][] sfx = Sfx.generateAll();
     private final float[][] voiceData = new float[8][];
@@ -47,6 +54,10 @@ public final class Audio {
             ". . . . . . . .  . . . . Gb4 - - -  . . . . . . . .  . . . . C5 - B4 -", true),
         new Song(72, "Am F C G",
             "E5 - - D5 C5 - - -  A4 - - - F4 - - -  G4 - C5 - E5 - D5 -  D5 - - - B4 - - -", false),
+        new Song(112, "Gm Eb Bb D",
+            "G4 . Bb4 . D5 - C5 Bb4  Eb5 - D5 - Bb4 - G4 -  F4 . Bb4 . D5 - F5 D5  F#4 - A4 - D5 - - -", false),
+        new Song(92, "Bbm Gb Db F",
+            "Bb4 - - Db5 C5 - Bb4 -  Gb4 - - - Db5 - - -  F4 - Ab4 - Db5 - C5 Db5  C5 - - - A4 - - -", false),
     };
 
     private int song = SONG_NONE;

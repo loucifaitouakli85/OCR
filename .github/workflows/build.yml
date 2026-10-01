@@ -24,7 +24,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Test (all 20 chambers are solved by the bot)
+      - name: Test (all 30 chambers are solved by the bot)
         run: ./gradlew --no-daemon testDebugUnitTest
 
       - name: Build APK

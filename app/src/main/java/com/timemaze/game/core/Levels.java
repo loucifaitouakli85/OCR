@@ -1,16 +1,26 @@
 package com.timemaze.game.core;
 
-/** The twenty chambers of the Time Maze. */
+/** The thirty chambers of the Time Maze. */
 public final class Levels {
     private Levels() {}
 
-    public static final int COUNT = 20;
+    public static final int COUNT = 30;
 
     public static final String[] ZONE_NAMES = {
-        "THE CLOCKWORK HALLS", "THE SUNKEN HOURS", "THE FROZEN SECONDS", "THE HEART OF TIME"
+        "THE CLOCKWORK HALLS", "THE SUNKEN HOURS", "THE FROZEN SECONDS", "THE RUSTED YEARS", "THE ASHEN AGES",
+        "THE HEART OF TIME"
     };
 
+    private static final Level[] CACHE = new Level[COUNT + 1];
+
+    /** Returns chamber n (1..COUNT). Levels are never modified, so they are built once. */
     public static Level get(int n) {
+        if (n < 1 || n > COUNT) throw new IllegalArgumentException("No level " + n);
+        if (CACHE[n] == null) CACHE[n] = build(n);
+        return CACHE[n];
+    }
+
+    static Level build(int n) {
         switch (n) {
             case 1: return l1();
             case 2: return l2();
@@ -32,6 +42,16 @@ public final class Levels {
             case 18: return l18();
             case 19: return l19();
             case 20: return l20();
+            case 21: return l21();
+            case 22: return l22();
+            case 23: return l23();
+            case 24: return l24();
+            case 25: return l25();
+            case 26: return l26();
+            case 27: return l27();
+            case 28: return l28();
+            case 29: return l29();
+            case 30: return l30();
             default: throw new IllegalArgumentException("No level " + n);
         }
     }
@@ -225,6 +245,14 @@ public final class Levels {
             .exit("")
             .intro("A CLOCKWORK BUTTON. PRESS IT AND THE GATE ABOVE OPENS... BUT ONLY FOR TWO SECONDS.")
             .hint("TIMED BUTTONS WORK ONCE PER PRESS. A REMNANT CAN WAIT BEFORE PRESSING IT.")
+            .event(new ShadeEvent().onLoop(1).at(5, 9)
+                .say("S:CLEVER BOY. YOU THINK TIME BENDS FOR YOU.",
+                    "M:YOU AGAIN?",
+                    "S:LET ME SHOW YOU HOW SHORT A SECOND CAN BE.",
+                    "#ACT",
+                    "N:THE SHADE TAMPERED WITH THE BUTTON. NOW THE GATE STAYS OPEN FOR BARELY A MOMENT.",
+                    "M:THEN MY ECHO WILL HAVE TO PRESS IT AT EXACTLY THE RIGHT TIME.")
+                .timer('t', 80).restartLoop())
             .par(1);
     }
 
@@ -331,6 +359,13 @@ public final class Levels {
             .exit("a")
             .intro("THE LEDGE IS FOUR BLOCKS HIGH. ONE REMNANT WON'T BE ENOUGH.")
             .hint("REMNANTS CAN STAND ON EACH OTHER. THE ONE AT THE BOTTOM MUST STAY THE LONGEST!")
+            .event(new ShadeEvent().onLoop(1).at(10, 9)
+                .say("S:A TOWER BUILT OUT OF YOURSELF. HOW TOUCHING.",
+                    "S:BUT EVERY TOWER FALLS, BOY.",
+                    "#ACT",
+                    "N:THE SHADE DROVE SPIKES INTO THE FLOOR WHERE THE TOWER STOOD, AND SCATTERED MILO'S REMNANTS.",
+                    "M:THEN I'LL BUILD IT ON THE OTHER SIDE OF THE LEDGE.")
+                .setTile(10, 9, '^').clearRemnants())
             .par(2);
     }
 
@@ -398,7 +433,7 @@ public final class Levels {
             .exit("")
             .intro("THE FROST IS CRACKING. SOMEWHERE BEHIND THE GATE, SOMETHING IS WAITING FOR MILO.")
             .event(new ShadeEvent().onStart().at(17, 9)
-                .say("S:I WARNED YOU. TWICE.",
+                .say("S:I HAVE WARNED YOU AGAIN AND AGAIN.",
                     "M:I'M NOT SCARED OF YOU!",
                     "S:YOU SHOULD BE. NOT OF ME... OF WHAT COMES AFTER.",
                     "S:IF WORDS CAN'T STOP YOU, THEN I WILL.",
@@ -408,10 +443,30 @@ public final class Levels {
             .par(2);
     }
 
-    // =================================================== ZONE 4: HEART OF TIME
+    // ================================================== ZONE 4: THE RUSTED YEARS
 
     static Level l16() {
-        return new Level(16, "INVERSION", 3,
+        return new Level(16, "DEAD WEIGHT", 3,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#............##....#",
+            "#.T...H.....###.E..#",
+            "########^^##########")
+            .heavy('H', 'a')
+            .exit("a")
+            .intro("RUST EATS THE WALLS HERE. AN IRON PLATE SITS IN THE FLOOR, FAR TOO HEAVY FOR ONE BOY.")
+            .hint("HEAVY PLATES NEED TWO BODIES. TWO REMNANTS... OR A TOWER OF THEM.")
+            .par(2);
+    }
+
+    static Level l17() {
+        return new Level(17, "INVERSION", 3,
             "####################",
             "#......Z..#........#",
             "#.........#........#",
@@ -428,13 +483,41 @@ public final class Levels {
             .door('D', "a")
             .laser('Z', Level.DIR_DOWN, "a")
             .exit("b")
-            .intro("THE WALLS PULSE LIKE A HEARTBEAT. HERE, THE RULES RUN BACKWARDS.")
+            .intro("THE RUSTED GEARS HERE TURN THE WRONG WAY. SO DO THE RULES.")
             .hint("PLATE A OPENS THE GATE BUT FIRES THE LASER. BE ON THE RIGHT SIDE OF IT.")
             .par(2);
     }
 
-    static Level l17() {
-        return new Level(17, "SKYWARD", 3,
+    static Level l18() {
+        return new Level(18, "THE FLOOR GIVES WAY", 3,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#.################.#",
+            "#.................=#",
+            "#..................#",
+            "#................==#",
+            "#..................#",
+            "#................==#",
+            "#.T..........b.E...#",
+            "####################")
+            .plate('b', 'b')
+            .exit("b")
+            .intro("AN OLD STONE BRIDGE CROSSES THE VOID. A PASSAGE ABOVE LEADS BACK, BUT ONLY ONE WAY.")
+            .hint("THE WAY BACK FROM THE FAR SIDE IS UP THE LEDGES AND ALONG THE TOP.")
+            .event(new ShadeEvent().onLoop(1).at(9, 9)
+                .say("S:YOU WALK THESE BRIDGES AS IF THEY WERE BUILT FOR YOU.",
+                    "S:NOTHING IN THIS MAZE WAS BUILT FOR YOU, BOY.",
+                    "#ACT",
+                    "N:THE SHADE CRACKED THE BRIDGE. IT WILL ONLY HOLD FOR A MOMENT AFTER SOMEONE STEPS ON IT.",
+                    "M:THEN MY ECHO AND I CROSS TOGETHER.")
+                .setTile(7, 10, 'x').setTile(8, 10, 'x').setTile(9, 10, 'x').setTile(10, 10, 'x').setTile(11, 10, 'x')
+                .restartLoop())
+            .par(1);
+    }
+
+    static Level l19() {
+        return new Level(19, "SKYWARD", 3,
             "####################",
             "#..................#",
             "#..................#",
@@ -454,8 +537,133 @@ public final class Levels {
             .par(2);
     }
 
-    static Level l18() {
-        return new Level(18, "THE LONG LOOP", 3,
+    static Level l20() {
+        return new Level(20, "RUST AND RUIN", 3,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#...........L......#",
+            "#.........#####....#",
+            "#..................#",
+            "#.T......H.......E.#",
+            "####################")
+            .lever('L', 'a', false)
+            .heavy('H', 'h')
+            .exit("a")
+            .intro("A LEVER ON A LEDGE, AN IRON PLATE BENEATH IT. THE AIR SMELLS OF RUST... AND OF SOMEONE WAITING.")
+            .event(new ShadeEvent().onSignal('a', 1).at(15, 9)
+                .say("S:A LEVER. HOW QUAINT.",
+                    "M:NOT YOU AGAIN!",
+                    "S:LET ME TEACH YOU SOMETHING ABOUT LOCKS.",
+                    "#ACT",
+                    "N:THE SHADE REWIRED THE EXIT AND SCATTERED MILO'S REMNANTS. NOW THE EXIT NEEDS THE LEVER AND THE HEAVY PLATE TOGETHER.",
+                    "M:HE KEEPS CHANGING THE RULES. BUT EVERY RULE HAS AN ANSWER.")
+                .rewire('E', "ah").clearRemnants().restartLoop())
+            .par(2);
+    }
+
+    // ================================================== ZONE 5: THE ASHEN AGES
+
+    static Level l21() {
+        return new Level(21, "RIFTS", 4,
+            "####################",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#.T.a....R..#b.r.E.#",
+            "####################")
+            .plate('a', 'a')
+            .plate('b', 'b')
+            .rift('R', 'r', "a")
+            .exit("b")
+            .intro("ASH DRIFTS THROUGH THE AIR. TEARS IN TIME FLICKER BETWEEN THE WALLS.")
+            .hint("STEP INTO A RIFT TO COME OUT OF ITS TWIN. THIS ONE ONLY OPENS WHILE PLATE A IS HELD.")
+            .hint("REMNANTS TRAVEL THROUGH RIFTS TOO, AND THEY NEED THEM OPEN TO COME HOME.")
+            .par(2);
+    }
+
+    static Level l22() {
+        return new Level(22, "RIFT RELAY", 4,
+            "####################",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#.....#......#.....#",
+            "#T.aR.#.r.bQ.#.q.E.#",
+            "####################")
+            .plate('a', 'a')
+            .plate('b', 'b')
+            .rift('R', 'r', "a")
+            .rift('Q', 'q', "b")
+            .exit("")
+            .intro("THREE SEALED ROOMS AND TWO RIFTS. EACH ECHO OPENS THE WAY FOR THE NEXT.")
+            .par(2);
+    }
+
+    static Level l23() {
+        return new Level(23, "LIGHTS OUT", 4,
+            "####################",
+            "#.........Z.....#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............D..#",
+            "#...............D..#",
+            "#T.a.b..........D.E#",
+            "############^^######")
+            .plate('a', 'a')
+            .timer('b', 'b', 120)
+            .laser('Z', Level.DIR_DOWN, "!a")
+            .door('D', "b")
+            .exit("")
+            .intro("A LONG HALL OF LIGHT AND LOCKED GATES. FOR NOW, THE LAMPS STILL BURN.")
+            .event(new ShadeEvent().onLoop(1).at(8, 9)
+                .say("S:YOU SEE TOO MUCH, BOY.",
+                    "S:LET'S FIND OUT HOW BRAVE YOU ARE IN THE DARK.",
+                    "#ACT",
+                    "N:THE SHADE SNUFFED OUT EVERY LAMP. ONLY MILO, HIS REMNANTS AND THE MACHINES STILL GLOW.",
+                    "M:THEN MY ECHOES WILL LIGHT THE WAY.")
+                .darken().restartLoop())
+            .par(2);
+    }
+
+    static Level l24() {
+        return new Level(24, "SINKING STONE", 4,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#...........L....E.#",
+            "#.........##########",
+            "#..................#",
+            "#Q.T...............#",
+            "#########x##########",
+            "#..................#",
+            "#....q.............#",
+            "####################")
+            .lever('L', 'a', false)
+            .rift('Q', 'q', "")
+            .exit("a")
+            .intro("THE ONLY PLACE TO STAND BELOW THE LEDGE IS CRACKED. WHOEVER STANDS THERE WON'T STAND FOR LONG.")
+            .hint("CRACKED FLOORS GIVE WAY A MOMENT AFTER SOMEONE STEPS ON THEM. BE QUICK!")
+            .par(1);
+    }
+
+    static Level l25() {
+        return new Level(25, "THE LONG LOOP", 4,
             "####################",
             "#........Z.....G...#",
             "#..p.c.........G..E#",
@@ -474,12 +682,85 @@ public final class Levels {
             .laser('Z', Level.DIR_DOWN, "!c")
             .door('G', "b")
             .exit("")
-            .intro("THREE LOCKS, THREE REMNANTS, ONE PERFECT LOOP. THE HEART IS CLOSE NOW.")
+            .intro("THREE LOCKS, THREE REMNANTS, ONE PERFECT LOOP. THE ASH FALLS LIKE SNOW HERE.")
             .par(3);
     }
 
-    static Level l19() {
-        return new Level(19, "THE TRUTH", 3,
+    // ================================================= ZONE 6: THE HEART OF TIME
+
+    static Level l26() {
+        return new Level(26, "THE HUNT RETURNS", 5,
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#........E.........#",
+            "#.......####.......#",
+            "#R.a..T.......r...b#",
+            "####################")
+            .plate('a', 'a')
+            .plate('b', 'b')
+            .rift('R', 'r', "")
+            .exit("ab")
+            .intro("THE HEART OF TIME BEATS SOMEWHERE ABOVE. BETWEEN ITS BEATS, SOMETHING IS HUNTING.")
+            .event(new ShadeEvent().onStart().at(9, 7)
+                .say("S:YOU ARE SO CLOSE NOW. TOO CLOSE.",
+                    "M:YOU COULDN'T CATCH ME LAST TIME!",
+                    "S:LAST TIME I WAS HOLDING BACK.",
+                    "#ACT",
+                    "N:THE SHADE IS HUNTING AGAIN, AND HE IS FASTER. THE RIFT MIGHT SHAKE HIM OFF.")
+                .chase(9, 3, 210, 0.6f))
+            .par(2);
+    }
+
+    static Level l27() {
+        return new Level(27, "HEAVY HEART", 5,
+            "####################",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#...............#..#",
+            "#..........L....#..#",
+            "#.........#####.#..#",
+            "#...............D..#",
+            "#...............D..#",
+            "#.T......H......D.E#",
+            "####################")
+            .lever('L', 'a', false)
+            .heavy('H', 'h')
+            .door('D', "h")
+            .exit("a")
+            .intro("ONE TOWER, TWO JOBS. THE MAZE IS TESTING EVERYTHING MILO HAS LEARNED.")
+            .par(2);
+    }
+
+    static Level l28() {
+        return new Level(28, "ALL AT ONCE", 5,
+            "####################",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#.r..c.#",
+            "#...........###x####",
+            "#...........#...Z..#",
+            "#...........#......#",
+            "#...........#......#",
+            "#...........#......#",
+            "#.T..H...R..#....E.#",
+            "####################")
+            .heavy('H', 'h')
+            .plate('c', 'c')
+            .rift('R', 'r', "h")
+            .laser('Z', Level.DIR_DOWN, "!c")
+            .exit("")
+            .intro("IRON, RIFTS, CRUMBLING STONE AND LIGHT THAT BURNS. EVERYTHING AT ONCE.")
+            .par(3);
+    }
+
+    static Level l29() {
+        return new Level(29, "THE TRUTH", 5,
             "####################",
             "#......#......#....#",
             "#......#......#....#",
@@ -518,8 +799,8 @@ public final class Levels {
             .par(2);
     }
 
-    static Level l20() {
-        return new Level(20, "THE HEART OF TIME", 3,
+    static Level l30() {
+        return new Level(30, "THE HEART OF TIME", 5,
             "####################",
             "#.......Z..........#",
             "#......p..E........#",

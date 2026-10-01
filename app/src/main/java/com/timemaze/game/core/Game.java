@@ -57,7 +57,7 @@ public final class Game {
     final Btn bPause = new Btn(), bRestart = new Btn(), bFast = new Btn(), bHelp = new Btn();
     final Btn bBack = new Btn();
     final Btn[] menu = new Btn[6];
-    final Btn[] cells = new Btn[20];
+    final Btn[] cells = new Btn[Levels.COUNT];
 
     public boolean quitRequested;
 
@@ -331,7 +331,7 @@ public final class Game {
             return;
         }
         int u = unlocked();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < Levels.COUNT; i++) {
             if (tapped(cells[i])) {
                 if (i + 1 <= u) {
                     play(Sfx.SELECT);
@@ -344,8 +344,8 @@ public final class Game {
         }
         if (input.pressed(Input.K_LEFT)) menuSel = Math.max(0, menuSel - 1);
         if (input.pressed(Input.K_RIGHT)) menuSel = Math.min(u - 1, menuSel + 1);
-        if (input.pressed(Input.K_UP)) menuSel = Math.max(0, menuSel - 5);
-        if (input.pressed(Input.K_DOWN)) menuSel = Math.min(u - 1, menuSel + 5);
+        if (input.pressed(Input.K_UP)) menuSel = Math.max(0, menuSel - 10);
+        if (input.pressed(Input.K_DOWN)) menuSel = Math.min(u - 1, menuSel + 10);
         if (input.pressed(Input.K_ENTER) || input.pressed(Input.K_JUMP)) startLevel(menuSel + 1);
     }
 
@@ -363,7 +363,7 @@ public final class Game {
     }
 
     private int zoneSong() {
-        return Audio.SONG_ZONE1 + Levels.get(levelNum).zone;
+        return Audio.forZone(Levels.get(levelNum).zone);
     }
 
     private void updateIntro() {
@@ -742,22 +742,25 @@ public final class Game {
     // ---------------------------------------------------------------- select
 
     private void drawSelect(Gfx g) {
-        backdrop(g, Theme.ZONES[Math.min(3, (unlocked() - 1) / 5)]);
+        int zones = Levels.ZONE_NAMES.length;
+        backdrop(g, Theme.ZONES[Math.min(zones - 1, (unlocked() - 1) / 5)]);
         int cx = vw / 2, top = (vh - 192) / 2;
         g.textCenterShadow("CHOOSE A CHAMBER", cx, top + 6, GOLD, INK);
         bBack.set(cx - 150, top + 2, 24, 16);
         button(g, bBack, "<", false);
         int u = unlocked();
-        int cw = 34, ch = 22, gap = 6;
-        int gridW = 5 * cw + 4 * gap;
-        int x0 = cx - gridW / 2;
-        for (int z = 0; z < 4; z++) {
-            int y = top + 22 + z * 42;
+        // two zones per row: 5 cells each
+        int cw = 28, ch = 22, gap = 3, zoneGap = 12;
+        int zoneW = 5 * cw + 4 * gap;
+        int x0 = cx - (2 * zoneW + zoneGap) / 2;
+        for (int z = 0; z < zones; z++) {
+            int zx = x0 + (z % 2) * (zoneW + zoneGap);
+            int y = top + 24 + (z / 2) * 50;
             Theme th = Theme.ZONES[z];
-            g.textCenter(Levels.ZONE_NAMES[z], cx, y, th.accent);
+            g.textCenter(Levels.ZONE_NAMES[z], zx + zoneW / 2, y, th.accent);
             for (int i = 0; i < 5; i++) {
                 int n = z * 5 + i + 1;
-                Btn b = cells[n - 1].set(x0 + i * (cw + gap), y + 10, cw, ch);
+                Btn b = cells[n - 1].set(zx + i * (cw + gap), y + 10, cw, ch);
                 boolean open = n <= u;
                 boolean sel = menuSel == n - 1;
                 g.rect(b.x, b.y, b.w, b.h, open ? th.wallD : 0xFF14101C);
@@ -765,16 +768,15 @@ public final class Game {
                 g.frame(b.x, b.y, b.w, b.h, sel ? WHITE : (open ? th.edge : 0xFF2A2436));
                 if (open) {
                     String num = (n < 10 ? "0" : "") + n;
-                    g.textCenterShadow(num, b.x + b.w / 2, b.y + 6, WHITE, INK);
+                    g.textCenterShadow(num, b.x + b.w / 2 - 1, b.y + 8, WHITE, INK);
                     int best = store.getInt("best" + n, -1);
                     if (best >= 0) {
-                        int par = Levels.get(n).parRemnants;
-                        boolean star = best <= par;
+                        boolean star = best <= Levels.get(n).parRemnants;
                         g.text(star ? "*" : "+", b.x + 2, b.y + ch - 8, star ? GOLD : CYAN);
                     }
-                    if (n == 5 || n == 10 || n == 15 || n == 19) g.sprite(Sprites.SHADE_ICON, b.x + b.w - 8, b.y + 2, false);
+                    if (Levels.get(n).isShadeLevel()) g.sprite(Sprites.SHADE_ICON, b.x + b.w - 8, b.y + 2, false);
                 } else {
-                    g.sprite(Sprites.LOCK_ICON, b.x + b.w / 2 - 3, b.y + 7, false);
+                    g.sprite(Sprites.LOCK_ICON, b.x + b.w / 2 - 3, b.y + 8, false);
                 }
             }
         }

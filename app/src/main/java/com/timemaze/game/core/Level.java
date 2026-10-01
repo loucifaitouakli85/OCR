@@ -9,6 +9,7 @@ import java.util.ArrayList;
  * <pre>
  *   #  wall            .  empty           =  one way ledge
  *   ^  spikes          T  time machine    E  exit door
+ *   x  crumbling floor (gives way a moment after someone steps on it)
  * </pre>
  *
  * Any other character is an object placeholder declared with the builder
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 public final class Level {
     public static final int COLS = 20, ROWS = 11, TILE = 16;
 
-    public static final int PLATE = 0, LEVER = 1, TIMER = 2, DOOR = 3, LIFT = 4, LASER = 5;
+    public static final int PLATE = 0, LEVER = 1, TIMER = 2, DOOR = 3, LIFT = 4, LASER = 5, RIFT = 6;
     public static final int DIR_LEFT = 0, DIR_RIGHT = 1, DIR_UP = 2, DIR_DOWN = 3;
 
     /** An object declaration. */
@@ -35,6 +36,8 @@ public final class Level {
         public int frames;
         public int endCol, endRow, width;
         public int dir;
+        /** Plates: how many bodies must stand on it. */
+        public int weight = 1;
     }
 
     public final int num;
@@ -47,6 +50,8 @@ public final class Level {
     public String intro = "";
     public String exitReq = "";
     public int maxRemnants = 9;
+    /** Lights out: only the boy, his remnants and the machines glow. */
+    public boolean dark;
     public int machineCol = -1, machineRow = -1, exitCol = -1, exitRow = -1;
     /** Fewest remnants the designer needed (shown after clearing). */
     public int parRemnants = -1;
@@ -121,6 +126,29 @@ public final class Level {
     public Level plate(char key, char channel) {
         Obj o = add(PLATE, key);
         o.channel = channel;
+        return this;
+    }
+
+    /** Heavy plate: only active while at least two bodies stand on it (a tower counts). */
+    public Level heavy(char key, char channel) {
+        Obj o = add(PLATE, key);
+        o.channel = channel;
+        o.weight = 2;
+        return this;
+    }
+
+    /** A pair of rifts: stepping into one comes out of the other, while req holds. */
+    public Level rift(char a, char b, String req) {
+        Obj o = add(RIFT, a);
+        int[] e = find(b);
+        o.endCol = e[0];
+        o.endRow = e[1];
+        o.req = req;
+        return this;
+    }
+
+    public Level dark() {
+        dark = true;
         return this;
     }
 

@@ -24,7 +24,9 @@ public final class ReadmeShots {
         game.render();
         Shot.save(game.gfx, 2, dir + "/screen-title.png");
         playShot(12, 280, dir + "/screen-tower.png");
-        playShot(18, 150, dir + "/screen-long-loop.png");
+        playShot(25, 150, dir + "/screen-long-loop.png");
+        playShot(28, 60, dir + "/screen-rifts.png");
+        playShot(23, 60, dir + "/screen-dark.png");
         playShot(7, 330, dir + "/screen-lasers.png");
     }
 }
