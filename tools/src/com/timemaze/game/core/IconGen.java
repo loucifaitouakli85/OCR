@@ -35,12 +35,18 @@ public final class IconGen {
     }
 
     static void write(int size, int k, boolean legacy, File out) throws Exception {
+        write(size, k, legacy ? 1 : 0, out);
+    }
+
+    /** mode 0: transparent background, 1: rounded square, 2: full-bleed opaque square. */
+    static void write(int size, int k, int mode, File out) throws Exception {
+        boolean legacy = mode == 1;
         Gfx a = art();
-        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage img = new BufferedImage(size, size, mode == 2 ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB);
         int off = (size - 30 * k) / 2;
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
-                int c = 0;
+                int c = mode == 2 ? BG : 0;
                 if (legacy) {
                     // rounded square background
                     int r = size / 6;
@@ -73,5 +79,14 @@ public final class IconGen {
         }
         // a large preview for the README
         if (args.length > 1) write(256, 8, true, new File(args[1]));
+        // web (PWA) and iOS icons
+        if (args.length > 2) {
+            File web = new File(args[2]);
+            write(192, 6, 1, new File(web, "icon-192.png"));
+            write(512, 17, 1, new File(web, "icon-512.png"));
+            write(512, 12, 2, new File(web, "icon-maskable-512.png"));
+            write(180, 5, 2, new File(web, "apple-touch-icon.png"));
+        }
+        if (args.length > 3) write(1024, 28, 2, new File(args[3]));
     }
 }

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Time Maze</title>
+  <meta name="description" content="A pixel-art time-loop puzzle platformer. Twenty chambers, one time machine, and the remnants of your past selves.">
+  <meta name="theme-color" content="#07050a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Time Maze">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #07050a;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #stage {
+      position: fixed;
+      left: env(safe-area-inset-left, 0px);
+      right: env(safe-area-inset-right, 0px);
+      top: env(safe-area-inset-top, 0px);
+      bottom: env(safe-area-inset-bottom, 0px);
+      overflow: hidden;
+    }
+    #view {
+      display: block;
+      touch-action: none;
+      outline: none;
+    }
+    #loading, #rotate {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: #e8c050;
+      font: bold 16px/1.4 monospace;
+      letter-spacing: 2px;
+      text-align: center;
+      background: #07050a;
+    }
+    #rotate { display: none; z-index: 10; }
+    #rotate small { color: #9a94a8; letter-spacing: 1px; font-weight: normal; }
+    @media (orientation: portrait) and (pointer: coarse) {
+      #rotate { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="view" tabindex="0"></canvas></div>
+  <div id="loading">TIME MAZE<small>LOADING...</small></div>
+  <div id="rotate">&#x21bb; ROTATE YOUR DEVICE<small>Time Maze plays in landscape</small></div>
+  <noscript><p style="color:#fff">Time Maze needs JavaScript.</p></noscript>
+  <script src="host.js"></script>
+  <script src="js/timemaze.js"></script>
+  <script>main();</script>
+</body>
+</html>

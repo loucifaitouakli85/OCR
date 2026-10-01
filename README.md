@@ -2,18 +2,38 @@
 
 # Time Maze
 
-*The boy who walked through time.* A pixel-art puzzle platformer for Android, in the spirit of **Chronotron** and **Braid**.
+*The boy who walked through time.* A pixel-art puzzle platformer for **Android, iPhone, iPad and the web**, in the spirit of **Chronotron** and **Braid**.
 
 Milo, a boy in blue overalls, is trapped in a maze made of time. Each of the **20 chambers** is sealed by a puzzle, and every chamber holds a **time machine**. Step inside, press the button, and you're sent back to the moment you arrived. Your previous run stays behind as a **remnant**, a ghostly copy of you that repeats everything you did. You solve each chamber by working together with your own past selves.
 
 ![Title screen](docs/screen-title.png)
 
-## Download
+## Download and play
 
-- **APK:** [`dist/TimeMaze.apk`](dist/TimeMaze.apk). Copy it to your phone and open it. Android will ask you to allow installs from this source.
-- Every push also builds the APK on GitHub Actions. Look for the `TimeMaze-apk` artifact on the **Actions** tab. Pushes to the default branch also publish it on the **Releases** page.
+All platforms run the same game code (`app/src/main/java/com/timemaze/game/core`), so levels, saves and story are identical everywhere.
 
-Requires Android 5.0 (API 21) or newer and plays in landscape. The APK is about 90 KB: every sprite, tile, sound and song is generated in code.
+### Android
+
+- **APK:** [`dist/TimeMaze.apk`](dist/TimeMaze.apk), or the newest `TimeMaze.apk` on the **Releases** page. Copy it to your phone and open it. Android will ask you to allow installs from this source.
+- Requires Android 5.0 (API 21) or newer. The APK is about 90 KB: every sprite, tile, sound and song is generated in code.
+
+### iPhone and iPad
+
+**Play in Safari (easiest, no App Store needed).** The web version is published on GitHub Pages at `https://loucifaitouakli85.github.io/<repository name>/`. The address follows the repository's name, for example `.../time-maze/`. Open it in Safari, tap **Share → Add to Home Screen**, and Time Maze gets its own icon and runs fullscreen, offline, with saved progress. To turn the site on, go to **Settings → Pages → Source: GitHub Actions** once; every push to the default branch then republishes it.
+
+**Native iOS app.** `ios/` holds a small Swift app that bundles the same game. Building it needs a Mac with Xcode:
+
+```bash
+scripts/prepare-ios.sh                      # builds the web game into ios/TimeMaze/www
+brew install xcodegen
+cd ios && xcodegen generate && open TimeMaze.xcodeproj
+```
+
+Pick your team under *Signing & Capabilities* and press Run to install it on your iPhone. A free Apple ID works for your own device. Publishing on the App Store needs an Apple Developer account. Each build on GitHub Actions also produces `TimeMaze-unsigned.ipa`, which sideloading tools such as AltStore or Sideloadly can sign with your Apple ID.
+
+### Computer
+
+The web version also plays in desktop browsers with the keyboard or a gamepad. To run it locally: `scripts/build-web.sh`, then `python3 -m http.server -d web/target/webapp 8000`.
 
 ## How to play
 
@@ -64,7 +84,7 @@ The ending is a cliffhanger. The Heart of Time cracks. Old Milo starts to warn t
 
 ## Building
 
-The project is plain Java with no third-party libraries.
+The game is plain Java with no third-party libraries.
 
 **Android Studio / Gradle** (needs the Android SDK and JDK 17):
 
@@ -80,14 +100,18 @@ sudo apt install aapt apksigner zipalign dalvik-exchange android-sdk-platform-23
 ./scripts/build-apk-local.sh  # dist/TimeMaze.apk
 ```
 
-Both builds sign with the key in `keystore/`. It's a public debug key, so APKs from either build can update each other. Generate your own key before publishing to a store.
+**Web** (JDK 11+ and Maven): `scripts/build-web.sh` compiles the game to JavaScript with [TeaVM](https://teavm.org) into `web/target/webapp`.
+
+**iOS:** see *iPhone and iPad* above.
+
+Both Android builds sign with the key in `keystore/`. It's a public debug key, so APKs from either build can update each other. Generate your own key before publishing to a store.
 
 ## How it's made
 
 ```
 app/src/main/java/com/timemaze/game/
 ├── MainActivity, GameView, AudioOut, PrefsStorage   Android host: window, 60 Hz loop, touch/keys, audio thread, saves
-└── core/                                            platform-independent game (runs on a desktop JVM too)
+└── core/                                            platform-independent game, shared by every platform
     ├── World        physics, loop recording and replay, paradox detection, mechanisms, the Shade
     ├── Levels       the 20 chambers as ASCII maps plus wiring, hints and Shade scripts
     ├── Game         screens, HUD, touch controls, cutscenes, save data
@@ -95,6 +119,8 @@ app/src/main/java/com/timemaze/game/
     ├── Story        intro and ending scenes
     ├── Sprites/Font hand-made pixel art and a 5x7 pixel font, defined in code
     └── Audio/Sfx    software synth: chiptune music per zone and all sound effects
+web/    browser host (WebMain.java + host.js): canvas, multi-touch, keyboard, gamepads, Web Audio, offline PWA
+ios/    Swift app (XcodeGen project) that shows the web build fullscreen in a WKWebView
 ```
 
 The game draws into a small pixel buffer that the phone scales up with nearest-neighbour filtering, so the pixels stay crisp on any screen. Remnants replay recorded positions frame by frame. A paradox is detected when a replayed remnant overlaps something solid, loses the support it had, or touches a hazard.

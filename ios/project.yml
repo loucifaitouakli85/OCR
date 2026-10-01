@@ -1,0 +1,39 @@
+# XcodeGen spec for the native iOS app. The app is a thin Swift shell around
+# the web build of the game (web/), which is copied into TimeMaze/www.
+#
+#   scripts/prepare-ios.sh        # builds the web game and copies it into ios/TimeMaze/www
+#   brew install xcodegen && cd ios && xcodegen generate && open TimeMaze.xcodeproj
+name: TimeMaze
+options:
+  bundleIdPrefix: com.timemaze
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+targets:
+  TimeMaze:
+    type: application
+    platform: iOS
+    sources:
+      - path: TimeMaze
+        excludes:
+          - "www"
+          - "www/**"
+          - "Info.plist"
+      - path: TimeMaze/www
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_NAME: TimeMaze
+        PRODUCT_BUNDLE_IDENTIFIER: com.timemaze.game
+        INFOPLIST_FILE: TimeMaze/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+    scheme: {}
