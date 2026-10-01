@@ -19,7 +19,7 @@ All platforms run the same game code (`app/src/main/java/com/timemaze/game/core`
 
 ### iPhone and iPad
 
-**Play in Safari (easiest, no App Store needed).** The web version is published on GitHub Pages at `https://loucifaitouakli85.github.io/<repository name>/`. The address follows the repository's name, for example `.../time-maze/`. Open it in Safari, tap **Share → Add to Home Screen**, and Time Maze gets its own icon and runs fullscreen, offline, with saved progress. To turn the site on, go to **Settings → Pages → Source: GitHub Actions** once; every push to the default branch then republishes it.
+**Play in Safari (easiest, no App Store needed).** The web version is published on GitHub Pages at **https://loucifaitouakli85.github.io/TIME_MAZE/**. Open it in Safari, tap **Share → Add to Home Screen**, and Time Maze gets its own icon and runs fullscreen, offline, with saved progress. To turn the site on, go to **Settings → Pages → Source: GitHub Actions** once; every push to the default branch then republishes it.
 
 **Native iOS app.** `ios/` holds a small Swift app that bundles the same game. Building it needs a Mac with Xcode:
 
