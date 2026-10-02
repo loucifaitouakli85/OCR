@@ -1028,7 +1028,7 @@ public final class Game {
     };
 
     private void drawCredits(Gfx g) {
-        backdrop(g, Theme.ZONES[3]);
+        backdrop(g, Theme.ZONES[Theme.ZONES.length - 1]);
         g.blendRect(0, 0, vw, vh, 0xFF000000, 120);
         int y = Math.max(vh - timer / 2, 16);
         int cx = vw / 2;
