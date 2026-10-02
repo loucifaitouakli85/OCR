@@ -308,7 +308,7 @@ public final class Levels {
         return e.group(0)
             .say("S:STILL RUNNING THROUGH THESE HALLS?",
                 "M:YOU AGAIN! WHY ARE YOU DOING THIS?",
-                "S:THAT IS NOT FOR YOU TO KNOW. NOT YET.",
+                "S:THAT IS NOT FOR YOU TO KNOW, BOY... NOT YET.",
                 "S:BUT I WILL BURY EVERY ROAD YOU TRY TO TAKE.",
                 "#ACT",
                 "N:THE CEILING CAVED IN. THE LOW ROAD IS GONE, AND SO ARE MILO'S REMNANTS.",
