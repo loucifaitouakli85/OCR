@@ -106,7 +106,7 @@ public final class GameShots {
         }
         game.screen = Game.S_CREDITS;
         game.timer = 0;
-        frames(300);
+        frames(420);
         shot("17_credits");
     }
 }

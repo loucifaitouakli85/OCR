@@ -1016,11 +1016,6 @@ public final class Game {
         "A GAME ABOUT BEING",
         "IN TWO PLACES AT ONCE",
         "",
-        "DESIGN, CODE, PIXELS AND MUSIC",
-        "BUILT WITH CLAUDE CODE",
-        "",
-        "INSPIRED BY CHRONOTRON AND BRAID",
-        "",
         "MILO WILL RETURN IN",
         "TIME MAZE II: THE UNRAVELING",
         "",
@@ -1030,7 +1025,9 @@ public final class Game {
     private void drawCredits(Gfx g) {
         backdrop(g, Theme.ZONES[Theme.ZONES.length - 1]);
         g.blendRect(0, 0, vw, vh, 0xFF000000, 120);
-        int y = Math.max(vh - timer / 2, 16);
+        // scroll up until the block rests centred above the prompt and the remnants
+        int rest = Math.max(16, (vh - 48 - CREDITS.length * 14) / 2);
+        int y = Math.max(vh - timer / 2, rest);
         int cx = vw / 2;
         for (int i = 0; i < CREDITS.length; i++) {
             int yy = y + i * 14;
@@ -1042,6 +1039,6 @@ public final class Game {
             int alpha = phase < 40 ? phase * 4 : phase > 200 ? (250 - phase) * 3 : 160;
             g.spriteEx(Sprites.BOY_IDLE, cx - 60 + i * 24, vh - 24, false, Renderer.REMNANT_TINT, 150, alpha);
         }
-        if (timer > 120 && (timer / 30 & 1) == 0) g.textCenter("TAP TO RETURN", cx, vh - 40, GREY);
+        if (y == rest && (timer / 30 & 1) == 0) g.textCenter("TAP TO RETURN", cx, vh - 40, GREY);
     }
 }
