@@ -56,8 +56,15 @@ public class LevelsTest {
     }
 
     @Test
-    public void timedButtonExpiresBeforeTheBoyArrives() {
-        Bot.Result r = Bot.run(Levels.get(8), new Cmd[][]{
+    public void theButtonInChamber8WorksNormallyUntilTheShadeTampersWithIt() {
+        assertEquals(360, new World(Levels.get(8)).plates.get(0).timerFrames);
+        // reaching the gate brings the Shade, who shortens the button and restarts the loop
+        Cmd[] climb = {walk(10), jumpTo(11), jumpTo(9), jumpTo(11), walk(12), jumpTo(14)};
+        Bot.Result r = Bot.run(Levels.get(8), new Cmd[][]{loop(climb), loop(idle(10))});
+        assertTrue(r.log, r.log.contains("shade event"));
+        assertEquals(100, r.world.plates.get(0).timerFrames);
+        // now a boy who presses the button himself is too slow to reach the gate
+        r = Bot.run(Levels.get(8), new Cmd[][]{loop(climb),
             loop(walk(1), walk(10), jumpTo(11), jumpTo(9), jumpTo(11), walk(12), jumpTo(14), walk(18))});
         assertFalse(r.won);
     }

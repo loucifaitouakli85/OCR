@@ -41,8 +41,8 @@ public final class Solutions {
                 loop(walk(17)),
             };
             case 8: return new Cmd[][]{
+                loop(walk(10), jumpTo(11), jumpTo(9), jumpTo(11), walk(12), jumpTo(14)), // the Shade shortens the button's window
                 loop(until(230), walk(1), walk(3), act()),
-                loop(walk(10)), // the Shade shortens the button's window
                 loop(walk(10), jumpTo(11), jumpTo(9), jumpTo(11), walk(12), jumpTo(14), waitFor(w -> w.doors.get(0).open >= 1f), walk(18)),
             };
             case 9: return new Cmd[][]{

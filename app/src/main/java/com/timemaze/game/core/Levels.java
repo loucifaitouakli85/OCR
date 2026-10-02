@@ -240,19 +240,20 @@ public final class Levels {
             "###........==......#",
             "#t.T...............#",
             "####################")
-            .timer('t', 'a', 120)
+            .timer('t', 'a', 360)
             .door('D', "a")
             .exit("")
-            .intro("A CLOCKWORK BUTTON. PRESS IT AND THE GATE ABOVE OPENS... BUT ONLY FOR TWO SECONDS.")
+            .intro("A CLOCKWORK BUTTON. PRESS IT AND THE GATE ABOVE OPENS FOR A FEW SECONDS.")
             .hint("TIMED BUTTONS WORK ONCE PER PRESS. A REMNANT CAN WAIT BEFORE PRESSING IT.")
-            .event(new ShadeEvent().onLoop(1).at(5, 9)
+            // the button works normally until Milo reaches the gate; then the Shade shortens it
+            .event(new ShadeEvent().onEnter(14, 1, 15, 2).at(17, 2)
                 .say("S:CLEVER BOY. YOU THINK TIME BENDS FOR YOU.",
                     "M:YOU AGAIN?",
                     "S:LET ME SHOW YOU HOW SHORT A SECOND CAN BE.",
                     "#ACT",
                     "N:THE SHADE TAMPERED WITH THE BUTTON. NOW THE GATE STAYS OPEN FOR BARELY A MOMENT.",
                     "M:THEN MY ECHO WILL HAVE TO PRESS IT AT EXACTLY THE RIGHT TIME.")
-                .timer('t', 80).restartLoop())
+                .timer('t', 100).restartLoop())
             .par(1);
     }
 

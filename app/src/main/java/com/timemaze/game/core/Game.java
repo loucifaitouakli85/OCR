@@ -804,8 +804,10 @@ public final class Game {
         if (cut != null && cutPhase == 1 && cutLine < cut.lines.length && !cut.lines[cutLine].startsWith("#")) {
             String line = cut.lines[cutLine];
             if (cutRevealed && line.startsWith("S:")) line = "O:" + line.substring(2);
-            // characters stand on the floor, so talk happens at the top of the room
-            dialogBox(g, roomX + 6, roomY + 4, ROOM_W - 12, 46, line, cutChars);
+            // characters usually stand on the floor, so talk happens at the top of the room,
+            // unless the scene plays out up high
+            boolean high = cut.row < 6 || world.y < 6 * 16;
+            dialogBox(g, roomX + 6, high ? roomY + ROOM_H - 50 : roomY + 4, ROOM_W - 12, 46, line, cutChars);
         }
     }
 
